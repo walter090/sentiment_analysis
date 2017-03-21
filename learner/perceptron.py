@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class Perceptron:
+class Perceptron(object):
 
     def __init__(self, epochs=5, shuffle=False):
         self.epochs = epochs
