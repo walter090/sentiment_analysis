@@ -4,10 +4,8 @@ from learner.scorer import Scorer
 
 class Perceptron(object):
 
-    def __init__(self, epochs=5, shuffle=False):
+    def __init__(self, epochs=5):
         self.epochs = epochs
-        self.shuffle = shuffle
-
         self.weights_ = []
 
     @staticmethod
@@ -18,28 +16,26 @@ class Perceptron(object):
         """
         fit the model
         :param verbose: print epoch training information if set to true, default false
-        :param X: features
+        :param X: features in dicts
         :param y: target labels
         :param alpha: learning rate
         :return: return an instance of the object
         """
-        weights = np.zeros(X.shape[1])
+        self.weights_ = np.zeros(len(X[0]))
 
         for i in range(self.epochs):
             predictions = []
             for j, entry in enumerate(X):
-                y_hat = np.dot(weights, entry)
+                y_hat = np.dot(self.weights_, entry) > 0
                 predictions.append(y_hat)
                 error = y[j] - y_hat  # find error
-                weights = [coef + alpha * error * entry for coef in weights]  # update weights
+                self.weights = [coef + alpha * error * entry for coef in self.weights_]  # update weights
             if verbose:
                 print('=============================================================')
                 print('                         Epoch{}                            '.format(i))
                 print('=============================================================')
-                print('Weights: {}').format(weights)
-                print('Epoch error: {}').format(self.epoch_error(y, predictions).round(3))
-
-        self.weights_ = weights
+                print('Weights: {}'.format(self.weights_))
+                print('Epoch error: {}'.format(self.epoch_error(y, predictions).round(3)))
 
         return self
 
@@ -49,10 +45,11 @@ class Perceptron(object):
         :param X: array like, (n_samples, n_features)
         :return: returns an array of the predictions
         """
-        return [1 if np.dot(self.weights_, entry) > 0 else 0 for entry in X]
+        return [1 if np.dot(self.weights_, entry) > 0 else -1 for entry in X]
 
-    def score(self, X, y, metric='cv', beta=1.0):
+    def score(self, X, y, metric='cv', beta=1.0, n=5):
         """
+        :param n:
         :param X: feature values
         :param y: target label
         :param metric: the metric used to score the model, default accuracy
@@ -62,6 +59,10 @@ class Perceptron(object):
         :return: return the score for the model
         """
         validator = Scorer()
+
+        if metric == 'cv':
+            return validator.cross_validate(X, y, self.train, n, beta)
+
         predictions = self.predict(X)
         metric_options = {
             'accuracy': validator.get_accuracy(y, predictions),

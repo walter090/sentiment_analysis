@@ -1,4 +1,5 @@
 class Scorer(object):
+
     @staticmethod
     def get_accuracy(y, predictions):
         correct = [predictions[i] for i in range(len(predictions))

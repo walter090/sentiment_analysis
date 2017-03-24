@@ -72,8 +72,9 @@ class NaiveBayesClassifier(object):
 
         return max(posterior, key=posterior.get)
 
-    def score(self, X, y, metric='cv', beta=1.0):
+    def score(self, X, y, metric='cv', beta=1.0, n=5):
         """
+        :param n:
         :param X: feature values
         :param y: target label
         :param metric: the metric used to score the model, default accuracy
@@ -85,6 +86,7 @@ class NaiveBayesClassifier(object):
         validator = Scorer()
         predictions = self.predict(X)
         metric_options = {
+            'cv': validator.cross_validate(X, y, self.train, n, beta),
             'accuracy': validator.get_accuracy(y, predictions),
             'precision': validator.get_precision(y, predictions),
             'recall': validator.get_recall(y, predictions),
