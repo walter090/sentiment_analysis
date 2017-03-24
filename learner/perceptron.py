@@ -86,6 +86,7 @@ class Perceptron(object):
         :param X: feature values
         :param y: target label
         :param metric: the metric used to score the model, default accuracy
+                       if 'dump' is selected return a dictionary of all metrics
         :param * beta: set beta for f-beta score if fbeta score is selected
                        beta < 1 favors precision, beta > 0 favors recall
         :return: return the score for the model
@@ -97,5 +98,8 @@ class Perceptron(object):
             'recall': self.get_recall(y, predictions),
             'fbeta': self.get_fbeta(y, predictions, beta),
         }
+
+        if metric == 'dump':
+            return metric_options
 
         return metric_options[metric]
