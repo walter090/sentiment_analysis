@@ -1,4 +1,5 @@
 import numpy as np
+import time
 from collections import defaultdict
 from learner.scorer import Scorer
 
@@ -23,6 +24,7 @@ class NaiveBayesClassifier(object):
         :param verbose:
         :return: a trained instance of self
         """
+        start = time.time()
         prior_count = {}
         for i, label in enumerate(y):
             if label in prior_count.keys():
@@ -42,6 +44,10 @@ class NaiveBayesClassifier(object):
         if self.prior is None:
             for key, value in prior_count.items():
                 self.prior[key] = value / float(len(y))
+
+        end = time.time()
+        if verbose:
+            print('Training time: {}').format(start - end)
 
         return self
 
