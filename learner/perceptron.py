@@ -1,4 +1,5 @@
 import numpy as np
+from learner.scorer import Scorer
 
 
 class Perceptron(object):
@@ -50,38 +51,7 @@ class Perceptron(object):
         """
         return [1 if np.dot(self.weights_, entry) > 0 else 0 for entry in X]
 
-    @staticmethod
-    def get_accuracy(y, predictions):
-        correct = [predictions[i] for i in range(len(predictions))
-                   if predictions[i] == y[i]]
-
-        return len(correct) / float(len(predictions))
-
-    @staticmethod
-    def get_precision(y, predictions):
-        true_positive = [predictions[i] for i in range(len(predictions))
-                         if predictions[i] == y[i] == 1]
-        positive = [predictions[i] for i in range(len(predictions)) if predictions[i] == 1]
-
-        return len(true_positive) / float(len(positive))
-
-    @staticmethod
-    def get_recall(y, predictions):
-        true_positive = [predictions[i] for i in range(len(predictions))
-                         if predictions[i] == y[i] == 1]
-        false_negative = [predictions[i] for i in range(len(predictions))
-                          if predictions[i] == 0 != y[i]]
-
-        return len(true_positive) / float(len(true_positive) + len(false_negative))
-
-    def get_fbeta(self, y, predictions, beta):
-        precision = self.get_precision(y, predictions)
-        recall = self.get_recall(y, predictions)
-        f_score = (1 + beta ** 2) * (precision * recall) / (beta ** 2 * precision + recall)
-
-        return f_score
-
-    def score(self, X, y, metric='accuracy', beta=1.0):
+    def score(self, X, y, metric='cv', beta=1.0):
         """
         :param X: feature values
         :param y: target label
@@ -91,12 +61,13 @@ class Perceptron(object):
                        beta < 1 favors precision, beta > 0 favors recall
         :return: return the score for the model
         """
+        validator = Scorer()
         predictions = self.predict(X)
         metric_options = {
-            'accuracy': self.get_accuracy(y, predictions),
-            'precision': self.get_precision(y, predictions),
-            'recall': self.get_recall(y, predictions),
-            'fbeta': self.get_fbeta(y, predictions, beta),
+            'accuracy': validator.get_accuracy(y, predictions),
+            'precision': validator.get_precision(y, predictions),
+            'recall': validator.get_recall(y, predictions),
+            'f-beta': validator.get_fbeta(y, predictions, beta),
         }
 
         if metric == 'dump':
