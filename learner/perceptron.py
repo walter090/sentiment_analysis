@@ -4,13 +4,13 @@ from learner.scorer import Scorer
 
 class Perceptron(object):
 
-    def __init__(self, epochs=5):
+    def __init__(self, epochs=3):
         self.epochs = epochs
         self.weights_ = []
 
     @staticmethod
-    def epoch_error(y, predictions):
-        return np.sum(y - predictions) / float(len(y))
+    def epoch_error(errors, y):
+        return np.sum(errors) / len(y)
 
     def train(self, X, y, alpha=0.1, verbose=False):
         """
@@ -25,17 +25,22 @@ class Perceptron(object):
 
         for i in range(self.epochs):
             predictions = []
+            errors = []
             for j, entry in enumerate(X):
-                y_hat = np.dot(self.weights_, entry) > 0
+                y_hat = 1 if np.dot(self.weights_, entry) > 0 else -1
                 predictions.append(y_hat)
                 error = y[j] - y_hat  # find error
-                self.weights = [coef + alpha * error * entry for coef in self.weights_]  # update weights
+                errors.append(error)
+
+                for k in range(0, len(self.weights_)):
+                    self.weights_[k] += alpha * error * entry[k]
+
+                # update weights
             if verbose:
                 print('=============================================================')
                 print('                         Epoch{}                            '.format(i))
                 print('=============================================================')
-                print('Weights: {}'.format(self.weights_))
-                print('Epoch error: {}'.format(self.epoch_error(y, predictions).round(3)))
+                print('Epoch error (training): {}'.format(self.epoch_error(errors, y).round(3)))
 
         return self
 
@@ -64,6 +69,7 @@ class Perceptron(object):
             return validator.cross_validate(X, y, self.train, n, beta)
 
         predictions = self.predict(X)
+
         metric_options = {
             'accuracy': validator.get_accuracy(y, predictions),
             'precision': validator.get_precision(y, predictions),

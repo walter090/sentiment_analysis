@@ -1,11 +1,11 @@
 import numpy as np
 import time
+import math
 from collections import defaultdict
 from learner.scorer import Scorer
 
 
 class NaiveBayesClassifier(object):
-
     def __init__(self, prior=None):
         """
 
@@ -14,7 +14,7 @@ class NaiveBayesClassifier(object):
         """
         self.count = defaultdict(dict)
         self.prior = prior
-        self.all = set()  # all words, type: string
+        self.all = set()  # all unique words, type: string
 
     def train(self, X, y, verbose=False):
         """
@@ -30,7 +30,7 @@ class NaiveBayesClassifier(object):
             if label in prior_count.keys():
                 prior_count[label] += 1
             else:
-                prior_count[label] = 0
+                prior_count[label] = 1
 
             for key, value in X[i].items():
                 self.all.add(key)
@@ -42,35 +42,37 @@ class NaiveBayesClassifier(object):
                     self.count[label][key] = value
 
         if self.prior is None:
+            self.prior = {}
             for key, value in prior_count.items():
-                self.prior[key] = value / float(len(y))
+                self.prior[key] = value / len(y)
 
         end = time.time()
         if verbose:
-            print('Training time: {}').format(start - end)
+            print('Training time: {} sec'.format(start - end))
 
         return self
 
     def predict(self, X):
         """
 
-        :param learn:
         :param X: a dictionary of {string: int}
         :return:
         """
-        posterior = {}
-        for label in self.prior.keys():
-            p_given_label = 0
-            for key, value in X.items():
-                if key in self.count[label]:
-                    p_given_label += \
-                        np.exp((self.count[label][key] + 1) / float(len(self.all) + 1 + len(self.count[label])))
-                else:
-                    p_given_label += np.exp(self.prior(label) / len(self.count[label]) + 1.)
+        predictions = []
+        for entry in X:
+            posterior = {}
+            for label in self.prior.keys():
+                p_given_label = 0.
+                for key in entry:
+                    if key in self.count[label]:
+                        p_given_label += math.log2(
+                            (self.count[label][key] + 1) / (len(self.count[label]) + 1 + len(self.all)))
+                    else:
+                        p_given_label += math.log2(1 / (len(self.count[label]) + len(self.all)))
 
-            posterior[label] = np.exp(self.prior[label]) + p_given_label
-
-        return max(posterior, key=posterior.get)
+                posterior[label] = math.log2(self.prior[label]) + p_given_label
+            predictions.append(max(posterior, key=posterior.get))
+        return predictions
 
     def score(self, X, y, metric='cv', beta=1.0, n=5):
         """
@@ -84,9 +86,13 @@ class NaiveBayesClassifier(object):
         :return: return the score for the model
         """
         validator = Scorer()
+
+        if metric == 'cv':
+            return validator.cross_validate(X, y, self.train, n, beta)
+
         predictions = self.predict(X)
+
         metric_options = {
-            'cv': validator.cross_validate(X, y, self.train, n, beta),
             'accuracy': validator.get_accuracy(y, predictions),
             'precision': validator.get_precision(y, predictions),
             'recall': validator.get_recall(y, predictions),
